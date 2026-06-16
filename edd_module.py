@@ -17,3 +17,21 @@ def calculate_weeks(lmp):
     weeks = days_passed // 7
     return weeks
 
+# Calculate which trimester based on weeks pregnant.
+def get_trimester(weeks):
+    """Return trimester name and week range as a tuple."""
+    if weeks <= 13:
+        return "First trimester", "Weeks 1-13"
+    elif weeks <= 26:
+        return "Second trimester", "Weeks 14-26"
+    elif weeks <= 40:
+        return "Third trimester", "Weeks 27-40"
+    else:
+        return "Post-term", "After week 40"
+
+
+# Calculate how many days remain until the expected delivery date.
+def days_until_edd(edd_date):
+    """Return days remaining until due date, minimum 0."""
+    return max((edd_date - date.today()).days, 0) 
+
