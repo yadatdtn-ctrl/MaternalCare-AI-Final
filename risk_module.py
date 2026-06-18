@@ -4,8 +4,8 @@
 # Import the pandas library and nickname it "pd" so we can use it easily
 import pandas as pd
 
-# Import Random Forest - the type of AI model we use to classify risk levels
-from sklearn.ensemble import RandomForestClassifier
+# Import Logistic Regression - the type of AI model we use to classify risk levels
+from sklearn.linear_model import LogisticRegression
 
 # Import a tool that checks how many predictions the model got right
 from sklearn.metrics import accuracy_score
@@ -17,6 +17,9 @@ from sklearn.model_selection import train_test_split
 def load_data(filepath="maternal_health_risk.csv"):
     # Open the CSV file and load all rows and columns into a table called "data"
     data = pd.read_csv(filepath)
+    # Remove duplicate rows to match the cleaned dataset
+    # used in the team's research notebook.
+    data = data.drop_duplicates()
     # Send the table back to whoever called this function
     return data
 
@@ -33,13 +36,12 @@ def prepare_features_and_target(data):
     return X, y
 
 
-# Define a function that creates and trains the Random Forest model
+# Define a function that creates and trains the Logistic Regression model
 def train_model(X, y):
-    # Create a new Random Forest model (random_state=42 keeps results the same each run)
-    model = RandomForestClassifier(random_state=42)
-    # Teach the model by showing it all the inputs (X) and correct answers (y)
+    # Logistic Regression - chosen to match the team's research notebook.
+    # max_iter=1000 lets the model fully converge on this dataset.
+    model = LogisticRegression(max_iter=1000, random_state=42)
     model.fit(X, y)
-    # Send the trained model back to whoever called this function
     return model
 
 
