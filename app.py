@@ -833,6 +833,21 @@ with tab_risk:
 
         st.divider()
 
+        risk_colors = {
+            "low risk": "#7BAD9B",
+            "mid risk": "#C4956A",
+            "high risk": "#C4607A",
+        }
+        risk_color = risk_colors.get(risk, "#C4956A")
+        st.markdown(
+            f"<div style='background:{risk_color};color:#ffffff;"
+            f"border-radius:12px;padding:0.6rem 1.4rem;"
+            f"display:inline-block;font-size:1.2rem;"
+            f"font-weight:700;margin-bottom:1rem;'>"
+            f"Result: {risk.title()}</div>",
+            unsafe_allow_html=True,
+        )
+
         if risk == "low risk":
             st.success(
                 "Your health indicators look wonderful. "
