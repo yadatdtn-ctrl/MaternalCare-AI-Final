@@ -4,14 +4,14 @@ MaternalCare AI is a Streamlit web app for pregnant women offering BMI calculati
 
 ## Team
 
-- **Yada** — Application development, Streamlit interface, integration
-- **Ramya** — Dataset research, model training and evaluation
+- **Yada** - Application development, Streamlit interface, integration
+- **Ramya** - Dataset research, model training and evaluation
 
 ## Features
 
-- **BMI module** — Calculates body mass index from weight and height, and classifies the result (underweight, normal, or overweight).
-- **EDD module** — Estimates the expected delivery date using Naegele's Rule and reports pregnancy week and trimester.
-- **Risk Assessment module** — Predicts maternal health risk (low, mid, or high) using a K-Nearest Neighbors classifier (K=2) with feature scaling, achieving approximately 68.1% accuracy on the maternal health risk dataset.
+- **BMI module** - Calculates body mass index from weight and height, and classifies the result (underweight, normal, or overweight).
+- **EDD module** - Estimates the expected delivery date using Naegele's Rule and reports pregnancy week and trimester.
+- **Risk Assessment module** - Predicts maternal health risk (low, mid, or high) using a K-Nearest Neighbors classifier (K=2) with feature scaling, achieving approximately 68.1% accuracy on the maternal health risk dataset.
 
 ## Tech stack
 
