@@ -5,9 +5,9 @@ from datetime import date
 
 import streamlit as st
 
-from bmi_module import calculate_bmi, classify_bmi
-from edd_module import calculate_edd, calculate_weeks, get_trimester, days_until_edd
-from risk_module import predict_maternal_risk, get_model_accuracy
+from src.bmi_module import calculate_bmi, classify_bmi
+from src.edd_module import calculate_edd, calculate_weeks, get_trimester, days_until_edd
+from src.risk_module import predict_maternal_risk, get_model_accuracy
 
 # -- Weekly pregnancy content dictionary --------------------------------------
 WEEKLY_UPDATES = {
@@ -379,6 +379,16 @@ st.markdown(
 def bmi_progress(bmi: float) -> float:
     """Map BMI onto a 0-1 scale anchored at 40 max for display."""
     return min(max(bmi / 40.0, 0.0), 1.0)
+
+
+def _indicator_badge(label: str, color: str) -> None:
+    """Render a compact colour-coded status line below an input field."""
+    st.markdown(
+        f"<div style='font-size:12px;color:{color} !important;"
+        f"margin:2px 0 10px 0;font-weight:500;'>"
+        f"<span style='color:{color} !important;'>{label}</span></div>",
+        unsafe_allow_html=True,
+    )
 
 
 # ===============================================================================
@@ -771,11 +781,16 @@ with tab_risk:
     with col_left:
         age = st.number_input(
             "Age",
-            min_value=1,
-            max_value=120,
+            min_value=10,
+            max_value=70,
             value=25,
-            help="Your age in years.",
+            help="Your age in years. This tool is trained on data for ages 10-70.",
         )
+        if 10 <= age <= 70:
+            _indicator_badge("Within model training range (10-70 yrs)", "#7BAD9B")
+        else:
+            _indicator_badge("Outside model training range", "#C4607A")
+
         systolic_bp = st.number_input(
             "Systolic BP (mmHg)",
             min_value=1,
@@ -783,6 +798,15 @@ with tab_risk:
             value=120,
             help="Top blood pressure number (when the heart beats). Normal is around 120 or below.",
         )
+        if systolic_bp < 120:
+            _indicator_badge("Normal (below 120 mmHg)", "#7BAD9B")
+        elif systolic_bp <= 129:
+            _indicator_badge("Elevated (120-129 mmHg)", "#C4956A")
+        elif systolic_bp <= 139:
+            _indicator_badge("Stage 1 high (130-139 mmHg)", "#C4956A")
+        else:
+            _indicator_badge("Stage 2 high (140+ mmHg)", "#C4607A")
+
         diastolic_bp = st.number_input(
             "Diastolic BP (mmHg)",
             min_value=1,
@@ -790,6 +814,12 @@ with tab_risk:
             value=80,
             help="Bottom blood pressure number (when the heart rests). Normal is around 80 or below.",
         )
+        if diastolic_bp < 80:
+            _indicator_badge("Normal (below 80 mmHg)", "#7BAD9B")
+        elif diastolic_bp <= 89:
+            _indicator_badge("Elevated (80-89 mmHg)", "#C4956A")
+        else:
+            _indicator_badge("High (90+ mmHg)", "#C4607A")
 
     # -- Right column inputs ---------------------------------------------------
     with col_right:
@@ -801,6 +831,15 @@ with tab_risk:
             step=0.1,
             help="Blood sugar level (mmol/L in this dataset). Values around 6-7 are typical.",
         )
+        if bs < 3.9:
+            _indicator_badge("Low (below 3.9 mmol/L)", "#C4607A")
+        elif bs <= 7.0:
+            _indicator_badge("Normal (3.9-7.0 mmol/L)", "#7BAD9B")
+        elif bs <= 11.0:
+            _indicator_badge("Elevated (7.1-11.0 mmol/L)", "#C4956A")
+        else:
+            _indicator_badge("High (above 11.0 mmol/L)", "#C4607A")
+
         body_temp = st.number_input(
             "Body temperature (degF)",
             min_value=90.0,
@@ -809,6 +848,15 @@ with tab_risk:
             step=0.1,
             help="Body temperature in Fahrenheit. Normal is around 98.6 F.",
         )
+        if body_temp < 97.0:
+            _indicator_badge("Low (below 97.0 degF)", "#C4956A")
+        elif body_temp <= 99.0:
+            _indicator_badge("Normal (97.0-99.0 degF)", "#7BAD9B")
+        elif body_temp <= 100.4:
+            _indicator_badge("Low-grade fever (99.1-100.4 degF)", "#C4956A")
+        else:
+            _indicator_badge("Fever (above 100.4 degF)", "#C4607A")
+
         heart_rate = st.number_input(
             "Heart rate (bpm)",
             min_value=1,
@@ -816,60 +864,85 @@ with tab_risk:
             value=75,
             help="Heartbeats per minute (bpm). Normal resting rate is about 60-100 bpm.",
         )
+        if heart_rate < 60:
+            _indicator_badge("Low - bradycardia (below 60 bpm)", "#C4956A")
+        elif heart_rate <= 100:
+            _indicator_badge("Normal (60-100 bpm)", "#7BAD9B")
+        else:
+            _indicator_badge("High - tachycardia (above 100 bpm)", "#C4607A")
 
     st.write("")  # spacer
 
     # Predict button - full width for visibility
     if st.button("Check my risk level", use_container_width=True):
-        risk = predict_maternal_risk(
-            age, systolic_bp, diastolic_bp, bs, body_temp, heart_rate
-        )
-        # Persist for Home tab snapshot
-        st.session_state["risk_result"] = risk
-
-        # Model accuracy - builds user trust
-        accuracy = get_model_accuracy()
-        st.caption(f"AI model accuracy: {accuracy}%")
-
-        st.divider()
-
-        risk_colors = {
-            "low risk": "#7BAD9B",
-            "mid risk": "#C4956A",
-            "high risk": "#C4607A",
+        valid_ranges = {
+            "Age": (age, 10, 70),
+            "Systolic BP": (systolic_bp, 70, 200),
+            "Diastolic BP": (diastolic_bp, 40, 140),
+            "Blood sugar": (bs, 2.0, 20.0),
+            "Body temperature": (body_temp, 90.0, 110.0),
+            "Heart rate": (heart_rate, 40, 200),
         }
-        risk_color = risk_colors.get(risk, "#C4956A")
-        st.markdown(
-            f"<div style='background:{risk_color};color:#ffffff;"
-            f"border-radius:12px;padding:0.6rem 1.4rem;"
-            f"display:inline-block;font-size:1.2rem;"
-            f"font-weight:700;margin-bottom:1rem;'>"
-            f"Result: {risk.title()}</div>",
-            unsafe_allow_html=True,
-        )
+        out_of_range = [
+            name for name, (val, lo, hi) in valid_ranges.items()
+            if not (lo <= val <= hi)
+        ]
 
-        if risk == "low risk":
-            st.success(
-                "Your health indicators look wonderful. "
-                "Keep up your regular check-ups and stay well-hydrated."
-            )
-        elif risk == "mid risk":
+        if out_of_range:
             st.warning(
-                "[!]  A few indicators need attention. "
-                "We recommend scheduling a check-up with your doctor soon. "
-                "You are doing great by staying informed."
-            )
-        elif risk == "high risk":
-            st.error(
-                "🩺  Some of your indicators need immediate attention. "
-                "Please contact your healthcare provider today. "
-                "You are not alone - help is available."
+                f"Please correct these fields before checking your risk level: "
+                f"{', '.join(out_of_range)}."
             )
         else:
-            st.warning(
-                f"Unexpected result: {risk!r}. "
-                "Please consult your doctor for a proper assessment."
+            risk = predict_maternal_risk(
+                age, systolic_bp, diastolic_bp, bs, body_temp, heart_rate
             )
+            # Persist for Home tab snapshot
+            st.session_state["risk_result"] = risk
+
+            # Model accuracy - builds user trust
+            accuracy = get_model_accuracy()
+            st.caption(f"AI model accuracy: {accuracy}%")
+
+            st.divider()
+
+            risk_colors = {
+                "low risk": "#7BAD9B",
+                "mid risk": "#C4956A",
+                "high risk": "#C4607A",
+            }
+            risk_color = risk_colors.get(risk, "#C4956A")
+            st.markdown(
+                f"<div style='background:{risk_color};color:#ffffff;"
+                f"border-radius:12px;padding:0.6rem 1.4rem;"
+                f"display:inline-block;font-size:1.2rem;"
+                f"font-weight:700;margin-bottom:1rem;'>"
+                f"Result: {risk.title()}</div>",
+                unsafe_allow_html=True,
+            )
+
+            if risk == "low risk":
+                st.success(
+                    "Your health indicators look wonderful. "
+                    "Keep up your regular check-ups and stay well-hydrated."
+                )
+            elif risk == "mid risk":
+                st.warning(
+                    "[!]  A few indicators need attention. "
+                    "We recommend scheduling a check-up with your doctor soon. "
+                    "You are doing great by staying informed."
+                )
+            elif risk == "high risk":
+                st.error(
+                    "Some of your indicators need immediate attention. "
+                    "Please contact your healthcare provider today. "
+                    "You are not alone - help is available."
+                )
+            else:
+                st.warning(
+                    f"Unexpected result: {risk!r}. "
+                    "Please consult your doctor for a proper assessment."
+                )
 
     st.divider()
     st.markdown(

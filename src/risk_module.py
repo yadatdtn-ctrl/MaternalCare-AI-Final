@@ -14,8 +14,12 @@ from sklearn.metrics import accuracy_score
 # Import a tool that splits data into a training part and a testing part
 from sklearn.model_selection import train_test_split
 
+# Resolve the CSV path relative to this file so it works regardless of CWD
+from pathlib import Path
+_DEFAULT_CSV = str(Path(__file__).parent.parent / "data" / "maternal_health_risk.csv")
+
 # Define a function that reads the CSV file and returns the data as a table
-def load_data(filepath="maternal_health_risk.csv"):
+def load_data(filepath=_DEFAULT_CSV):
     # Open the CSV file and load all rows and columns into a table called "data"
     data = pd.read_csv(filepath)
     # Remove duplicate rows to match the cleaned dataset
@@ -78,7 +82,7 @@ _model_accuracy = None
 
 
 # Define an internal helper function that trains the model once and saves it in memory
-def _ensure_model_ready(filepath="maternal_health_risk.csv"):
+def _ensure_model_ready(filepath=_DEFAULT_CSV):
     # Tell Python we want to use and update the three memory boxes defined above
     global _trained_model, _scaler, _model_accuracy
 
@@ -123,7 +127,7 @@ def predict_maternal_risk(age, systolic_bp, diastolic_bp, bs, body_temp, heart_r
 
 
 # Define a function that returns how accurate the model is on test data
-def get_model_accuracy(filepath="maternal_health_risk.csv"):
+def get_model_accuracy(filepath=_DEFAULT_CSV):
     # Make sure the model is trained; get the accuracy back (ignore model and scaler with _)
     _, _s, accuracy = _ensure_model_ready(filepath)
     # Send the accuracy percentage back to whoever called this function
